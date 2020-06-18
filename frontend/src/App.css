@@ -3,6 +3,13 @@ a {
   text-decoration: inherit;
 }
 
+button:hover {
+  cursor: pointer;
+  background-color: #d5d5d5;
+  border: 1px solid #e1e8ed;
+  border-radius: 5px;
+}
+
 .wrapper {
   width: 500px;
   margin: auto;
@@ -30,19 +37,26 @@ a {
   margin-top: 25px;
 }
 
-.answer-button {
+.answer-container button {
   flex: 1;
   margin: 0px 20px;
   height: 100px;
-
-  border: 1px solid #e1e8ed;
-  border-radius: 5px;
 }
 
-.answer-button:hover {
-  cursor: pointer;
-  background-color: #d5d5d5;
+.results-container {
+  margin-top: 25px;
+  text-align: center;
 }
+
+.results-container img {
+  width: 100%;
+}
+
+.results-container button {
+  margin: 25px 0px;
+  width: 50%;
+}
+
 
 /* Reverse engineered from twitter embed CSS */
 
