@@ -48,13 +48,8 @@ button:hover {
   text-align: center;
 }
 
-.results-container img {
-  width: 100%;
-}
-
 .results-container button {
-  margin: 25px 0px;
-  width: 50%;
+  width: 80%;
 }
 
 
