@@ -7,8 +7,78 @@ const getRandomInt = max => {
   return Math.floor(Math.random() * max);
 };
 
+const loadNetworkTweet = (dataset, setTruth, setTweet) => {
+  axios
+    .post(
+      'https://api.modelzoo.dev/v1/models/gpt2-twitter-vc/predict',
+      {},
+      {
+        headers: {
+          // The Model Zoo Public Demo API Key. This key can only be used to
+          // access demo models.
+          'x-api-key': 'Wr5fOM2kbqarVwMu8j68T209sQLNDESD33QKHQ03',
+          'Content-Type': 'application/json'
+        }
+      }
+    )
+    .then(response => {
+      setTruth('network');
+      setTweet({
+        handle: '@_modelzoo_',
+        author: 'Neural Network',
+        body: response.data.output[0].generated_text,
+        likes: 0,
+        datetime: moment().format(),
+        link: 'https://app.modelzoo.dev/v1/models/gpt2-twitter-vc'
+      });
+    })
+    .catch(error => {
+      console.log(error);
+    });
+};
+
+const loadHumanTweet = (dataset, setTruth, setTweet) => {
+  // To prevent loading the entire dataset of static tweets into browser
+  // memory, we partition each dataset into a fixed number of files
+  // (hardcoded here) with 100 lines each. We first sample a random file,
+  // then sample a random line within that file.
+  //
+  // Generating a tweet from the language model will have some latency,
+  // while this process is near instantaneous. Therefore, we also fake some
+  // latency here to prevent users from using that signal.
+
+  const partitions = {
+    vc: 489
+  };
+
+  const randLatencyMilliseconds = 500 + Math.random() * 1500; // 500ms ~ 2000ms
+  const randPartition = getRandomInt(partitions[dataset]);
+  const partitionName = randPartition.toString().padStart(3, '0');
+  const partitionFile = './data/' + dataset + '/' + partitionName + '.txt';
+
+  setTimeout(() => {
+    fetch(partitionFile)
+      .then(r => r.text())
+      .then(response => {
+        const tweets = response.split('\n');
+        const rawTweet = tweets[getRandomInt(tweets.length)];
+        const tweet = JSON.parse(rawTweet);
+
+        setTruth('human');
+        setTweet({
+          handle: tweet.username,
+          author: tweet.name,
+          body: tweet.tweet,
+          likes: tweet.likes_count,
+          datetime: moment(tweet.date + ' ' + tweet.time).format(),
+          link: tweet.link
+        });
+      });
+  }, randLatencyMilliseconds);
+};
+
 const Avatar = props => {
-  if (props.revealed && props.handle === '@robot') {
+  if (props.revealed && props.handle === '@_modelzoo_') {
     return <img src="./images/robot.png" alt="robot" />;
   } else if (props.revealed) {
     return (
@@ -83,94 +153,23 @@ const Game = props => {
   let [truth, setTruth] = useState(null);
   let [guess, setGuess] = useState(null);
 
-  const loadNetworkTweet = dataset => {
-    axios
-      .post(
-        'https://api.modelzoo.dev/v1/models/gpt2-twitter-vc/predict',
-        {},
-        {
-          headers: {
-            // The Model Zoo Public Demo API Key. This key can only be used to
-            // access demo models.
-            'x-api-key': 'Wr5fOM2kbqarVwMu8j68T209sQLNDESD33QKHQ03',
-            'Content-Type': 'application/json'
-          }
-        }
-      )
-      .then(response => {
-        setTruth('network');
-        setTweet({
-          handle: '@robot',
-          author: 'Neural Network',
-          body: response.data.output[0].generated_text,
-          likes: 0,
-          datetime: moment().format(),
-          link: '#'
-        });
-      })
-      .catch(error => {
-        console.log(error);
-      });
-  };
-
-  const loadHumanTweet = dataset => {
-    // To prevent loading the entire dataset of static tweets into browser
-    // memory, we partition each dataset into a fixed number of files
-    // (hardcoded here) with 100 lines each. We first sample a random file,
-    // then sample a random line within that file.
-    //
-    // Generating a tweet from the language model will have some latency,
-    // while this process is near instantaneous. Therefore, we also fake some
-    // latency here to prevent users from using that signal.
-
-    const partitions = {
-      vc: 489
-    };
-
-    const randLatencyMilliseconds = 500 + Math.random() * 1500; // 500ms ~ 2000ms
-    const randPartition = getRandomInt(partitions[dataset]);
-    const partitionName = randPartition.toString().padStart(3, '0');
-    const partitionFile = './data/' + dataset + '/' + partitionName + '.txt';
-
-    setTimeout(() => {
-      fetch(partitionFile)
-        .then(r => r.text())
-        .then(response => {
-          const tweets = response.split('\n');
-          const rawTweet = tweets[getRandomInt(tweets.length)];
-          const tweet = JSON.parse(rawTweet);
-
-          setTruth('human');
-          setTweet({
-            handle: tweet.username,
-            author: tweet.name,
-            body: tweet.tweet,
-            likes: tweet.likes_count,
-            datetime: moment(tweet.date + ' ' + tweet.time).format(),
-            link: tweet.link
-          });
-        });
-    }, randLatencyMilliseconds);
-  };
-
-  const loadRandomTweet = () => {
-    const type = 'vc';
-
-    if (Math.random() < 0.5) {
-      loadNetworkTweet(type);
-    } else {
-      loadHumanTweet(type);
-    }
-  };
-
   useEffect(() => {
-    loadRandomTweet();
-  }, []);
+    if (Math.random() < 0.5) {
+      loadNetworkTweet('vc', setTruth, setTweet);
+    } else {
+      loadHumanTweet('vc', setTruth, setTweet);
+    }
+  }, [setTruth, setTweet]);
 
   const reset = () => {
     setTweet(null);
     setGuess(null);
-    loadRandomTweet();
+
+    if (Math.random() < 0.5) {
+      loadNetworkTweet('vc', setTruth, setTweet);
+    } else {
+      loadHumanTweet('vc', setTruth, setTweet);
+    }
   };
 
   if (tweet === null) {
