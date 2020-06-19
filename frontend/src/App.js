@@ -234,7 +234,7 @@ const Game = props => {
             className="try-again"
             style={{ height: '50px' }}
             onClick={reset}>
-            Try Again
+            New Tweet
           </button>
         </div>
       )}

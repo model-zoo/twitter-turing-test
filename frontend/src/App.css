@@ -1,3 +1,9 @@
+body {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+}
+
 a {
   color: inherit;
   text-decoration: inherit;
@@ -9,6 +15,7 @@ button:hover {
   border: 1px solid #e1e8ed;
   border-radius: 5px;
 }
+
 
 .wrapper {
   width: 500px;
