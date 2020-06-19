@@ -9,11 +9,22 @@ const getRandomInt = max => {
 
 const Avatar = props => {
   if (props.revealed && props.handle === '@robot') {
-    return <img src="./images/robot.png" />;
+    return <img src="./images/robot.png" alt="robot" />;
   } else if (props.revealed) {
-    return <img src={`http://twivatar.glitch.me/${props.handle}`} />;
+    return (
+      <img
+        src={`http://twivatar.glitch.me/${props.handle}`}
+        alt={props.handle}
+      />
+    );
   } else {
-    return <img src="./images/question.png" style={{ border: '1px black' }} />;
+    return (
+      <img
+        src="./images/question.png"
+        style={{ border: '1px black' }}
+        alt="mystery"
+      />
+    );
   }
 };
 
@@ -195,14 +206,22 @@ const Game = props => {
           className="answer-button"
           onClick={() => setGuess('network')}
           disabled={guess != null}>
-          <div style={{ fontSize: '50px' }}>🤖</div>
+          <div style={{ fontSize: '50px' }}>
+            <span role="img" aria-label="robot">
+              🤖
+            </span>
+          </div>
           <div>Neural Network</div>
         </button>
         <button
           className="answer-button"
           onClick={() => setGuess('human')}
           disabled={guess != null}>
-          <div style={{ fontSize: '50px' }}>🧠</div>
+          <div style={{ fontSize: '50px' }}>
+            <span role="img" aria-label="human brain">
+              🧠
+            </span>
+          </div>
           <div>Human</div>
         </button>
       </div>
