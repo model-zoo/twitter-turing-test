@@ -1,4 +1,6 @@
 body {
+  font-family: -apple-system,BlinkMacSystemFont,sans-serif;
+
   -webkit-appearance: none;
   -moz-appearance: none;
   appearance: none;
@@ -8,14 +10,6 @@ a {
   color: inherit;
   text-decoration: inherit;
 }
-
-button:hover {
-  cursor: pointer;
-  background-color: #d5d5d5;
-  border: 1px solid #e1e8ed;
-  border-radius: 5px;
-}
-
 
 .wrapper {
   width: 500px;
@@ -39,26 +33,6 @@ button:hover {
   transform-style: preserve-3d;
 }
 
-.answer-container {
-  display: flex;
-  margin-top: 25px;
-}
-
-.answer-container button {
-  flex: 1;
-  margin: 0px 20px;
-  height: 100px;
-}
-
-.results-container {
-  margin-top: 25px;
-  text-align: center;
-}
-
-.results-container button {
-  width: 80%;
-}
-
 
 /* Reverse engineered from twitter embed CSS */
 
@@ -78,7 +52,7 @@ button:hover {
 
 .tweet {
   padding: 20px 20px 11.6px 20px;
-  -webkit-backface-visibility: hidden; /* Safari */
+  -webkit-backface-visibility: hidden;
   backface-visibility: hidden;
 }
 

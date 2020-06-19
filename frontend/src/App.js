@@ -1,6 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import moment from 'moment';
+
+import Alert from '@material-ui/lab/Alert';
+import Box from '@material-ui/core/Box';
+import Button from '@material-ui/core/Button';
+import Typography from '@material-ui/core/Typography';
+import RotateLeftIcon from '@material-ui/icons/RotateLeft';
+
 import './App.css';
 
 const getRandomInt = max => {
@@ -200,43 +207,52 @@ const Game = props => {
         />
       </div>
 
-      <div className="answer-container">
-        <button
-          className="answer-button"
+      <div style={{ display: 'flex', marginTop: '25px' }}>
+        <Button
+          variant="contained"
           onClick={() => setGuess('network')}
-          disabled={guess != null}>
-          <div style={{ fontSize: '50px' }}>
-            <span role="img" aria-label="robot">
-              🤖
-            </span>
-          </div>
-          <div>Neural Network</div>
-        </button>
-        <button
-          className="answer-button"
+          disabled={guess != null}
+          style={{
+            flex: 1,
+            marginRight: '20px',
+            height: '100px'
+          }}
+          startIcon={null}>
+          Neural Network
+        </Button>
+        <Button
+          variant="contained"
           onClick={() => setGuess('human')}
-          disabled={guess != null}>
-          <div style={{ fontSize: '50px' }}>
-            <span role="img" aria-label="human brain">
-              🧠
-            </span>
-          </div>
-          <div>Human</div>
-        </button>
+          disabled={guess != null}
+          style={{
+            flex: 1,
+            marginLeft: '20px',
+            height: '100px'
+          }}>
+          Human
+        </Button>
       </div>
 
       {guess != null && (
-        <div className="results-container">
-          <h1 style={{ color: isCorrect ? 'green' : 'red' }}>
-            {isCorrect ? 'Correct' : 'Wrong'}
-          </h1>
-          <button
-            className="try-again"
-            style={{ height: '50px' }}
+        <Box
+          style={{ marginTop: '25px', textAlign: 'center', display: 'flex' }}>
+          <Alert
+            variant="filled"
+            severity={isCorrect ? 'success' : 'error'}
+            style={{ flex: 3, marginRight: '10px' }}>
+            {isCorrect ? 'You got it right!' : 'You got it wrong!'}
+          </Alert>
+          <Button
+            variant="contained"
+            style={{
+              flex: 1,
+              width: '100%',
+              marginLeft: '10px'
+            }}
             onClick={reset}>
             New Tweet
-          </button>
-        </div>
+          </Button>
+        </Box>
       )}
     </>
   );
