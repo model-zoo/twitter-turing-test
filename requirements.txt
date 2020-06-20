@@ -1,0 +1,3 @@
+modelzoo-client[transformers]
+boto3
+twint
