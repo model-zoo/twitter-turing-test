@@ -183,18 +183,28 @@ const Game = props => {
 
   const isCorrect = guess === truth;
 
+  const rotate = {
+    transform: 'rotateY(180deg)',
+    WebkitTransform: 'rotateY(180deg)',
+    MozTransform: 'rotateY(180deg)'
+  };
+
+  const rotateBehind = {
+    transform: 'translateZ(-1px) rotateY(180deg)',
+    WebkitTransform: 'translateZ(-1px) rotateY(180deg)',
+    MozTransform: 'translateZ(-1px) rotateY(180deg)'
+  };
+
   return (
     <>
-      <div
-        className="tweet-container"
-        style={guess ? { transform: 'rotateY(180deg)' } : null}>
+      <div className="tweet-container" style={guess ? rotate : null}>
         <Tweet
           tweet={{ ...tweet, revealed: false }}
           style={{ position: 'absolute' }}
         />
         <Tweet
           tweet={{ ...tweet, revealed: true }}
-          style={{ position: 'absolute', transform: 'rotateY(180deg)' }}
+          style={{ position: 'absolute', ...rotateBehind }}
         />
 
         {/* Add a dummy tweet with hidden visibility so that the elements
