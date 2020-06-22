@@ -171,7 +171,7 @@ if __name__ == "__main__":
     )
 
     # Optional arguments with reasonable defaults
-    parser.add_argument("--epochs", default=1)
+    parser.add_argument("--epochs", type=int, default=1)
     parser.add_argument("--save-steps", type=int, default=1000)
     parser.add_argument("--batch-size", type=int, default=32)
     parser.add_argument("--output-dir", type=str, default="checkpoints")
