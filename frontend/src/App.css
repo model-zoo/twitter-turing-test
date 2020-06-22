@@ -10,9 +10,20 @@ a {
 }
 
 .wrapper {
+  max-width: 500px;
+  margin: auto;
+  perspective: 1000px;
+}
+
+.footer {
+  position: fixed;
+  bottom: 10px;
+  width: 100%;
+}
+
+.footer-inner {
   width: 500px;
   margin: auto;
-  perspective: 1000px; /* Remove this if you don't want the 3D effect */
 }
 
 @media only screen and (max-width: 600px) {

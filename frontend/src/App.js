@@ -9,6 +9,9 @@ import CircularProgress from '@material-ui/core/CircularProgress';
 import Grid from '@material-ui/core/Grid';
 import Typography from '@material-ui/core/Typography';
 
+import RotateLeftIcon from '@material-ui/icons/RotateLeft';
+import TwitterIcon from '@material-ui/icons/Twitter';
+
 import './App.css';
 
 const getRandomInt = max => {
@@ -30,7 +33,27 @@ const datasetToLink = {
   democrats: 'https://app.modelzoo.dev/models/gpt2-twitter-democrats'
 };
 
-const loadNetworkTweet = (dataset, setTruth, setTweet) => {
+const datasetToLabel = {
+  vc: 'Venture Capital',
+  democrats: 'Democrat',
+  republicans: 'Republican',
+  covid19: 'COVID-19'
+};
+
+const shareTweet = tweet => {
+  // TODO: Add domain.
+  const tweetTemplate = `Can you guess whether this tweet is written by a human or a neural network?\n\n "${tweet.body}" \n\n TODO: Add domain`;
+  const tweetTemplateEncoded = encodeURIComponent(tweetTemplate);
+  window.open(
+    `https://twitter.com/intent/tweet?text=${tweetTemplateEncoded}`,
+    'Tweet',
+    'width=600,height=400'
+  );
+
+  return;
+};
+
+const loadNetworkTweet = (dataset, setTruth, setTweet, cancelToken) => {
   axios
     .post(
       datasetToEndpoint[dataset],
@@ -41,10 +64,18 @@ const loadNetworkTweet = (dataset, setTruth, setTweet) => {
           // access demo models.
           'x-api-key': 'Wr5fOM2kbqarVwMu8j68T209sQLNDESD33QKHQ03',
           'Content-Type': 'application/json'
-        }
+        },
+        cancelToken: cancelToken ? cancelToken.token : null
       }
     )
     .then(response => {
+      // Sometimes the model might return an empty response. If this happens,
+      // retry.
+      if (!response.data.output[0].generated_text) {
+        loadNetworkTweet(dataset, setTruth, setTweet, cancelToken);
+        return;
+      }
+
       setTruth('network');
       setTweet({
         handle: '@_modelzoo_',
@@ -55,9 +86,7 @@ const loadNetworkTweet = (dataset, setTruth, setTweet) => {
         link: datasetToLink[dataset]
       });
     })
-    .catch(error => {
-      console.log(error);
-    });
+    .catch(error => {});
 };
 
 const loadHumanTweet = (dataset, setTruth, setTweet) => {
@@ -74,15 +103,13 @@ const loadHumanTweet = (dataset, setTruth, setTweet) => {
   const randPartition = getRandomInt(datasetToNumPartitions[dataset]);
   const partitionName = randPartition.toString().padStart(3, '0');
   const partitionFile = './data/' + dataset + '/' + partitionName + '.txt';
-  console.log(partitionFile);
 
-  setTimeout(() => {
+  return setTimeout(() => {
     fetch(partitionFile)
       .then(r => r.text())
       .then(response => {
         const tweets = response.split('\n');
         const rawTweet = tweets[getRandomInt(tweets.length)];
-        console.log(rawTweet);
         const tweet = JSON.parse(rawTweet);
 
         setTruth('human');
@@ -181,9 +208,16 @@ const Game = props => {
     setGuess(null);
 
     if (Math.random() < 0.5) {
-      loadNetworkTweet(dataset, setTruth, setTweet);
+      const cancelToken = axios.CancelToken.source();
+      loadNetworkTweet(dataset, setTruth, setTweet, cancelToken);
+      return () => {
+        cancelToken.cancel();
+      };
     } else {
-      loadHumanTweet(dataset, setTruth, setTweet);
+      const timeout = loadHumanTweet(dataset, setTruth, setTweet);
+      return () => {
+        clearTimeout(timeout);
+      };
     }
   }, [setTruth, setTweet, dataset]);
 
@@ -200,7 +234,7 @@ const Game = props => {
 
   if (tweet === null) {
     return (
-      <Box style={{ textAlign: 'center' }}>
+      <Box my={2} style={{ textAlign: 'center' }}>
         <CircularProgress />
       </Box>
     );
@@ -242,7 +276,7 @@ const Game = props => {
 
       <Box my={2} />
 
-      <Grid container spacing={3} alignItems="stretch">
+      <Grid container spacing={2} alignItems="stretch">
         <Grid item xs sm md lg>
           <Button
             variant="contained"
@@ -271,8 +305,8 @@ const Game = props => {
       </Grid>
 
       {guess != null && (
-        <Grid container spacing={3} alignItems="stretch">
-          <Grid item xs={9} sm={9} md={9}>
+        <Grid container spacing={2} alignItems="stretch">
+          <Grid item xs={12} sm={6} md={6}>
             <Alert
               variant="filled"
               severity={isCorrect ? 'success' : 'error'}
@@ -280,9 +314,29 @@ const Game = props => {
               {isCorrect ? 'You got it right!' : 'You got it wrong!'}
             </Alert>
           </Grid>
-          <Grid item xs={3} sm={3} md={3}>
-            <Button variant="contained" onClick={reset} fullWidth>
+          <Grid item xs={6} sm={3} md={3}>
+            <Button
+              variant="contained"
+              onClick={reset}
+              fullWidth
+              startIcon=<RotateLeftIcon />>
               New Tweet
+            </Button>
+          </Grid>
+          <Grid item xs={6} sm={3} md={3}>
+            <Button
+              variant="contained"
+              onClick={() => {
+                shareTweet(tweet);
+              }}
+              style={{
+                backgroundColor: '#1b95e0',
+                color: 'white',
+                height: '100%'
+              }}
+              fullWidth
+              startIcon=<TwitterIcon />>
+              Share
             </Button>
           </Grid>
         </Grid>
@@ -294,7 +348,7 @@ const Game = props => {
 const App = () => {
   let [dataset, setDataset] = useState('vc');
 
-  const button = (buttonDataset, buttonLabel) => {
+  const button = buttonDataset => {
     const isChosen = dataset === buttonDataset;
     return (
       <Button
@@ -304,30 +358,62 @@ const App = () => {
         onClick={() => {
           setDataset(buttonDataset);
         }}>
-        {buttonLabel}
+        {datasetToLabel[buttonDataset]}
       </Button>
     );
   };
 
   return (
-    <div className="wrapper">
-      <Typography variant="h4">Twitter Turing Test</Typography>
-      <Box my={2} />
-      <Grid container spacing={1} alignItems="stretch">
-        <Grid item xs sm md lg>
-          {button('vc', 'VC')}
-        </Grid>
-        <Grid item xs sm md lg>
-          {button('democrats', 'Democrats')}
-        </Grid>
-      </Grid>
-      <Box my={2} />
-      <Typography variant="body1">
-        Can you tell whether this tweet is written by a human or a neural
-        network?
-      </Typography>
-      <Game dataset={dataset} />
-    </div>
+    <>
+      <div className="wrapper">
+        <Box display="inline" style={{ float: 'right', textAlign: 'right' }}>
+          <a href={datasetToLink[dataset]}>
+            <img
+              style={{ display: 'block' }}
+              src="https://modelzoo-public.s3-us-west-2.amazonaws.com/model-zoo-badge-transparent.png"
+              width="150px"
+            />
+          </a>
+          <Box my={1} />
+          <a
+            style={{ display: 'block' }}
+            href="https://twitter.com/share?ref_src=twsrc%5Etfw"
+            className="twitter-share-button"
+            data-text="Twitter Turing Test by @_modelzoo_"
+            data-show-count="false">
+            Tweet
+          </a>
+        </Box>
+        <Box my={5} />
+        <Typography variant="h4" display="inline">
+          <strong>Twitter Turing Test</strong>
+        </Typography>
+        <Box my={2} />
+        <Typography variant="h5" color="primary">
+          {datasetToLabel[dataset]} Edition
+        </Typography>
+        <Box my={2} />
+        <Typography variant="body1">
+          Can you tell whether this tweet is written by a human or a neural
+          network?
+        </Typography>
+        <Game dataset={dataset} />
+        <Box my={2} />
+      </div>
+      <div className="footer">
+        <div className="footer-inner">
+          <Typography variant="body1">Try another category:</Typography>
+          <Grid container spacing={1} alignItems="stretch">
+            <Grid item xs sm md lg>
+              {button('vc')}
+            </Grid>
+            <Grid item xs sm md lg>
+              {button('democrats')}
+            </Grid>
+          </Grid>
+        </div>
+      </div>
+    </>
   );
 };
 
