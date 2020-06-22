@@ -5,6 +5,9 @@ import moment from 'moment';
 import Alert from '@material-ui/lab/Alert';
 import Box from '@material-ui/core/Box';
 import Button from '@material-ui/core/Button';
+import CircularProgress from '@material-ui/core/CircularProgress';
+import Grid from '@material-ui/core/Grid';
+import Typography from '@material-ui/core/Typography';
 
 import './App.css';
 
@@ -12,10 +15,25 @@ const getRandomInt = max => {
   return Math.floor(Math.random() * max);
 };
 
+const datasetToNumPartitions = {
+  vc: 489,
+  democrats: 482
+};
+
+const datasetToEndpoint = {
+  vc: 'https://api.modelzoo.dev/v1/models/gpt2-twitter-vc/predict',
+  democrats: 'https://api.modelzoo.dev/v1/models/gpt2-twitter-democrats/predict'
+};
+
+const datasetToLink = {
+  vc: 'https://app.modelzoo.dev/models/gpt2-twitter-vc',
+  democrats: 'https://app.modelzoo.dev/models/gpt2-twitter-democrats'
+};
+
 const loadNetworkTweet = (dataset, setTruth, setTweet) => {
   axios
     .post(
-      'https://api.modelzoo.dev/v1/models/gpt2-twitter-vc/predict',
+      datasetToEndpoint[dataset],
       {},
       {
         headers: {
@@ -34,7 +52,7 @@ const loadNetworkTweet = (dataset, setTruth, setTweet) => {
         body: response.data.output[0].generated_text,
         likes: 0,
         datetime: moment().format(),
-        link: 'https://app.modelzoo.dev/v1/models/gpt2-twitter-vc'
+        link: datasetToLink[dataset]
       });
     })
     .catch(error => {
@@ -52,14 +70,11 @@ const loadHumanTweet = (dataset, setTruth, setTweet) => {
   // while this process is near instantaneous. Therefore, we also fake some
   // latency here to prevent users from using that signal.
 
-  const partitions = {
-    vc: 489
-  };
-
   const randLatencyMilliseconds = 500 + Math.random() * 1500; // 500ms ~ 2000ms
-  const randPartition = getRandomInt(partitions[dataset]);
+  const randPartition = getRandomInt(datasetToNumPartitions[dataset]);
   const partitionName = randPartition.toString().padStart(3, '0');
   const partitionFile = './data/' + dataset + '/' + partitionName + '.txt';
+  console.log(partitionFile);
 
   setTimeout(() => {
     fetch(partitionFile)
@@ -67,6 +82,7 @@ const loadHumanTweet = (dataset, setTruth, setTweet) => {
       .then(response => {
         const tweets = response.split('\n');
         const rawTweet = tweets[getRandomInt(tweets.length)];
+        console.log(rawTweet);
         const tweet = JSON.parse(rawTweet);
 
         setTruth('human');
@@ -158,27 +174,36 @@ const Game = props => {
   let [truth, setTruth] = useState(null);
   let [guess, setGuess] = useState(null);
 
+  const dataset = props.dataset;
+
   useEffect(() => {
+    setTweet(null);
+    setGuess(null);
+
     if (Math.random() < 0.5) {
-      loadNetworkTweet('vc', setTruth, setTweet);
+      loadNetworkTweet(dataset, setTruth, setTweet);
     } else {
-      loadHumanTweet('vc', setTruth, setTweet);
+      loadHumanTweet(dataset, setTruth, setTweet);
     }
-  }, [setTruth, setTweet]);
+  }, [setTruth, setTweet, dataset]);
 
   const reset = () => {
     setTweet(null);
     setGuess(null);
 
     if (Math.random() < 0.5) {
-      loadNetworkTweet('vc', setTruth, setTweet);
+      loadNetworkTweet(dataset, setTruth, setTweet);
     } else {
-      loadHumanTweet('vc', setTruth, setTweet);
+      loadHumanTweet(dataset, setTruth, setTweet);
     }
   };
 
   if (tweet === null) {
-    return <p>Loading...</p>;
+    return (
+      <Box style={{ textAlign: 'center' }}>
+        <CircularProgress />
+      </Box>
+    );
   }
 
   const isCorrect = guess === truth;
@@ -215,67 +240,93 @@ const Game = props => {
         />
       </div>
 
-      <div style={{ display: 'flex', marginTop: '25px' }}>
-        <Button
-          variant="contained"
-          onClick={() => setGuess('network')}
-          disabled={guess != null}
-          style={{
-            flex: 1,
-            marginRight: '20px',
-            height: '100px'
-          }}
-          startIcon={null}>
-          Neural Network
-        </Button>
-        <Button
-          variant="contained"
-          onClick={() => setGuess('human')}
-          disabled={guess != null}
-          style={{
-            flex: 1,
-            marginLeft: '20px',
-            height: '100px'
-          }}>
-          Human
-        </Button>
-      </div>
+      <Box my={2} />
 
-      {guess != null && (
-        <Box
-          style={{ marginTop: '25px', textAlign: 'center', display: 'flex' }}>
-          <Alert
-            variant="filled"
-            severity={isCorrect ? 'success' : 'error'}
-            style={{ flex: 3, marginRight: '10px' }}>
-            {isCorrect ? 'You got it right!' : 'You got it wrong!'}
-          </Alert>
+      <Grid container spacing={3} alignItems="stretch">
+        <Grid item xs sm md lg>
           <Button
             variant="contained"
+            onClick={() => setGuess('network')}
+            disabled={guess != null}
             style={{
-              flex: 1,
-              width: '100%',
-              marginLeft: '10px'
+              height: '100px'
             }}
-            onClick={reset}>
-            New Tweet
+            fullWidth
+            startIcon={null}>
+            Neural Network
           </Button>
-        </Box>
+        </Grid>
+        <Grid item xs sm md lg>
+          <Button
+            variant="contained"
+            fullWidth
+            onClick={() => setGuess('human')}
+            disabled={guess != null}
+            style={{
+              height: '100px'
+            }}>
+            Human
+          </Button>
+        </Grid>
+      </Grid>
+
+      {guess != null && (
+        <Grid container spacing={3} alignItems="stretch">
+          <Grid item xs={9} sm={9} md={9}>
+            <Alert
+              variant="filled"
+              severity={isCorrect ? 'success' : 'error'}
+              style={{ boxSizing: 'border-box', height: '100%' }}>
+              {isCorrect ? 'You got it right!' : 'You got it wrong!'}
+            </Alert>
+          </Grid>
+          <Grid item xs={3} sm={3} md={3}>
+            <Button variant="contained" onClick={reset} fullWidth>
+              New Tweet
+            </Button>
+          </Grid>
+        </Grid>
       )}
     </>
   );
 };
 
 const App = () => {
+  let [dataset, setDataset] = useState('vc');
+
+  const button = (buttonDataset, buttonLabel) => {
+    const isChosen = dataset === buttonDataset;
+    return (
+      <Button
+        fullWidth
+        variant={isChosen ? 'contained' : 'outlined'}
+        disabled={isChosen}
+        onClick={() => {
+          setDataset(buttonDataset);
+        }}>
+        {buttonLabel}
+      </Button>
+    );
+  };
+
   return (
     <div className="wrapper">
-      <h1>Twitter Turing Test</h1>
-      <h4>Venture Capital Edition</h4>
-      <p>
+      <Typography variant="h4">Twitter Turing Test</Typography>
+      <Box my={2} />
+      <Grid container spacing={1} alignItems="stretch">
+        <Grid item xs sm md lg>
+          {button('vc', 'VC')}
+        </Grid>
+        <Grid item xs sm md lg>
+          {button('democrats', 'Democrats')}
+        </Grid>
+      </Grid>
+      <Box my={2} />
+      <Typography variant="body1">
         Can you tell whether this tweet is written by a human or a neural
         network?
-      </p>
-      <Game />
+      </Typography>
+      <Game dataset={dataset} />
     </div>
   );
 };
