@@ -7,7 +7,6 @@ import Box from '@material-ui/core/Box';
 import Button from '@material-ui/core/Button';
 import CircularProgress from '@material-ui/core/CircularProgress';
 import Grid from '@material-ui/core/Grid';
-import Link from '@material-ui/core/Link';
 import Typography from '@material-ui/core/Typography';
 import Select from '@material-ui/core/Select';
 import MenuItem from '@material-ui/core/MenuItem';
@@ -42,13 +41,6 @@ const datasetToLink = {
   democrats: 'https://app.modelzoo.dev/models/gpt2-twitter-democrats',
   republicans: 'https://app.modelzoo.dev/models/gpt2-twitter-republicans',
   covid19: 'https://app.modelzoo.dev/models/gpt2-twitter-covid19'
-};
-
-const datasetToLabel = {
-  vc: 'Venture Capital',
-  democrats: 'Democrat',
-  republicans: 'Republican',
-  covid19: 'COVID-19'
 };
 
 const shareTweet = tweet => {
@@ -360,24 +352,6 @@ const Game = props => {
 
 const App = () => {
   let [dataset, setDataset] = useState('vc');
-
-  const button = buttonDataset => {
-    const isChosen = dataset === buttonDataset;
-    return (
-      <Link
-        fullWidth
-        variant={isChosen ? 'contained' : 'outlined'}
-        disabled={isChosen}
-        onClick={() => {
-          setDataset(buttonDataset);
-        }}
-        style={{
-          height: '100%'
-        }}>
-        {datasetToLabel[buttonDataset]}
-      </Link>
-    );
-  };
 
   return (
     <>
