@@ -1,5 +1,5 @@
 """
-Fine-tuning GPT2 on tweets.
+Fine-tuning GPT2 on twitter data.
 
 Adapted from
 https://github.com/huggingface/transformers/tree/master/examples/language-modeling
@@ -24,13 +24,23 @@ from transformers import (
     PreTrainedTokenizer,
     Trainer,
     TrainingArguments,
-    set_seed,
 )
 
-from constants import START, END, UNKNOWN
+START = "<|startoftweet|>"
+END = "<|endoftweet|>"
+UNKNOWN = "<|unk|>"
 
 
 class TwintDataset(Dataset):
+    """
+    A dataset that is designed to read twitter data that has been scraped by
+    twint [1]. It expects a directory of UTF-8 encoded files. Each file should
+    have a single tweet per line, where each tweet is a JSON-encoded dictionary
+    where the 'tweet' key holds the tweet.
+
+    [1] https://github.com/twintproject/twint
+    """
+
     def __init__(
         self, tokenizer: PreTrainedTokenizer, directory: str, block_size: int = 1024
     ):
@@ -57,8 +67,10 @@ class TwintDataset(Dataset):
         tokenized = tokenizer.tokenize(full_text)
         self.tokens = tokenizer.convert_tokens_to_ids(tokenized)
         assert len(self.tokens) > self.block_size
-
         logging.info("Total number of tokens: {}".format(len(self.tokens)))
+
+        # So that we can have a constant block_size throughout training, we'll
+        # drop the remainder of the dataset (if one exists).
         remainder = len(self.tokens) % self.block_size
         if remainder != 0:
             self.tokens = self.tokens[:-remainder]
@@ -78,7 +90,6 @@ class TwintDataset(Dataset):
 
 
 def main(args):
-    # Setup logging
     logging.basicConfig(
         format="%(asctime)s - %(levelname)s - %(name)s -   %(message)s",
         datefmt="%m/%d/%Y %H:%M:%S",
@@ -86,6 +97,8 @@ def main(args):
     )
 
     if args.data_path.startswith("s3://"):
+        # If downloading data from an S3 URL, download into a temporary
+        # directory before training.
         data_dir = tempfile.TemporaryDirectory()
         data_path = data_dir.name
 
@@ -94,7 +107,6 @@ def main(args):
         bucket = boto3.resource("s3").Bucket(url.netloc)
         key = url.path.lstrip("/") + "/"
 
-        # download file into current directory
         for s3_object in bucket.objects.filter(Prefix=key).all():
             if s3_object.key == key:
                 continue
@@ -104,9 +116,6 @@ def main(args):
             bucket.download_file(s3_object.key, os.path.join(data_path, filename))
     else:
         data_path = args.data_path
-
-    # Set seed
-    set_seed(0)
 
     # Load pretrained model and tokenizer
     tokenizer = AutoTokenizer.from_pretrained("gpt2")
@@ -121,17 +130,15 @@ def main(args):
     model.config.eos_token_id = tokenizer.eos_token_id
     model.config.bos_token_id = tokenizer.bos_token_id
 
-    # Get datasets
     train_dataset = TwintDataset(tokenizer, data_path, block_size=64)
     data_collator = DataCollatorForLanguageModeling(tokenizer=tokenizer, mlm=False)
 
-    # Initialize our Trainer
     training_args = TrainingArguments(
         output_dir=args.output_dir,
         per_gpu_train_batch_size=int(args.batch_size),
         save_steps=int(args.save_steps),
         num_train_epochs=args.epochs,
-    )  # For now, use all defaults
+    )
 
     trainer = Trainer(
         model=model,
@@ -142,7 +149,12 @@ def main(args):
 
     trainer.train(model_path="output")
 
+    # We create a TextGenerationPipeline so that we can deploy it into Model Zoo.
     textgen = pipeline("text-generation", model=model, tokenizer=tokenizer)
+
+    # Since GPT2 is a large model with high memory requirements, we
+    # override defaults to configure our containers to use 2 GB memory and
+    # 1024 CPU units (1 vCPU)
     modelzoo.transformers.deploy(
         textgen,
         model_name="{}".format(args.run_name),
@@ -154,12 +166,12 @@ def main(args):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 
-    # Required arguments
     parser.add_argument(
         "--run-name",
         required=True,
         help="A unique name to distinguish this training run from "
-        "others (e.g. a timestamp)",
+        "others (e.g. a timestamp). At the end of training, a model will "
+        "be uploaded to Model Zoo under this name.",
     )
     parser.add_argument(
         "--data-path",
@@ -167,10 +179,9 @@ if __name__ == "__main__":
         help="A path to a directory that contains tweet data to train on. "
         "See the accompanying bash script for the data format. If this "
         "is an s3 path, the data will be downloaded to a temporary directory "
-        "before training",
+        "before training.",
     )
 
-    # Optional arguments with reasonable defaults
     parser.add_argument("--epochs", type=int, default=1)
     parser.add_argument("--save-steps", type=int, default=1000)
     parser.add_argument("--batch-size", type=int, default=32)
