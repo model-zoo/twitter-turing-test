@@ -420,7 +420,7 @@ const App = () => {
             on <a href={datasetToSources[dataset]}>these twitter accounts</a>.
             The views expressed by the human tweets are not reflective of our
             own. The views expressed by the model tweets are a parody and do not
-            reflect the opinion of any individual.
+            necessarily reflect the opinion of any one individual.
           </i>
         </Typography>
         <Game dataset={dataset} />
