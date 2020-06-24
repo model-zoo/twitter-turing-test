@@ -159,7 +159,6 @@ def main(args):
         textgen,
         model_name="{}".format(args.run_name),
         resources_config=modelzoo.ResourcesConfig(memory_mb=2048, cpu_units=1024),
-        wait_until_healthy=False,
     )
 
 
