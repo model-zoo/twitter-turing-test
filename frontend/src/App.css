@@ -9,6 +9,16 @@ a {
   text-decoration: inherit;
 }
 
+.styleLinks a {
+  color: gray;
+  text-decoration: underline;
+}
+
+.styleLinks a:hover {
+  color: black;
+  text-decoration: underline;
+}
+
 .wrapper {
   max-width: 500px;
   margin: auto;
