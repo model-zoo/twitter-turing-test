@@ -375,13 +375,22 @@ const App = () => {
           </a>
           <Box my={1} />
           <a
-            style={{ display: 'block' }}
             href="https://twitter.com/share?ref_src=twsrc%5Etfw"
             className="twitter-share-button"
             data-text="Twitter Turing Test: can you guess whether these tweets are written by a human or a neural network?"
             data-show-count="false">
             Tweet
           </a>
+          <Box ml={1} display="inline-block">
+            <a
+              style={{ marginLeft: '10px' }}
+              className="github-button"
+              href="https://github.com/model-zoo/twitter-turing-test"
+              data-size="large"
+              aria-label="Star model-zoo/twitter-turing-test on GitHub">
+              Star
+            </a>
+          </Box>
         </Box>
         <Box my={5} />
         <Typography variant="h4" display="inline">
