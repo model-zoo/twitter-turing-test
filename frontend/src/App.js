@@ -401,20 +401,17 @@ const App = () => {
             />
           </a>
           <Box my={1} />
+          <a
+            className="github-button"
+            href="https://github.com/model-zoo/twitter-turing-test"
+            data-size="large"
+            aria-label="Star model-zoo/twitter-turing-test on GitHub">
+            Star
+          </a>
           <Share
             url="https://twitterturingtest.modelzoo.dev"
             options={shareOptions}
           />
-          <Box ml={1} display="inline-block">
-            <a
-              style={{ marginLeft: '10px' }}
-              className="github-button"
-              href="https://github.com/model-zoo/twitter-turing-test"
-              data-size="large"
-              aria-label="Star model-zoo/twitter-turing-test on GitHub">
-              Star
-            </a>
-          </Box>
         </Box>
         <Box my={5} />
         <Typography variant="h4" display="inline">
