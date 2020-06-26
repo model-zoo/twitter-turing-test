@@ -13,6 +13,7 @@ import Select from '@material-ui/core/Select';
 import MenuItem from '@material-ui/core/MenuItem';
 
 import RotateLeftIcon from '@material-ui/icons/RotateLeft';
+import ErrorIcon from '@material-ui/icons/Error';
 import TwitterIcon from '@material-ui/icons/Twitter';
 
 import './App.css';
@@ -38,10 +39,11 @@ const datasetToEndpoint = {
 };
 
 const datasetToLink = {
-  vc: 'https://app.modelzoo.dev/models/gpt2-twitter-vc',
-  democrats: 'https://app.modelzoo.dev/models/gpt2-twitter-democrats',
-  republicans: 'https://app.modelzoo.dev/models/gpt2-twitter-republicans',
-  covid19: 'https://app.modelzoo.dev/models/gpt2-twitter-covid19'
+  vc: 'https://app.modelzoo.dev/models/gpt2-twitter-vc?tab=use',
+  democrats: 'https://app.modelzoo.dev/models/gpt2-twitter-democrats?tab=use',
+  republicans:
+    'https://app.modelzoo.dev/models/gpt2-twitter-republicans?tab=use',
+  covid19: 'https://app.modelzoo.dev/models/gpt2-twitter-covid19?tab=use'
 };
 
 const datasetToSources = {
@@ -67,11 +69,17 @@ const shareTweet = tweet => {
   return;
 };
 
-const loadNetworkTweet = (dataset, setTruth, setTweet, cancelToken) => {
+const loadNetworkTweet = (
+  dataset,
+  setTruth,
+  setTweet,
+  setError,
+  cancelToken
+) => {
   axios
     .post(
       datasetToEndpoint[dataset],
-      {},
+      { min_length: 1 },
       {
         headers: {
           // The Model Zoo Public Demo API Key. This key can only be used to
@@ -83,13 +91,6 @@ const loadNetworkTweet = (dataset, setTruth, setTweet, cancelToken) => {
       }
     )
     .then(response => {
-      // Sometimes the model might return an empty response. If this happens,
-      // retry.
-      if (!response.data.output[0].generated_text) {
-        loadNetworkTweet(dataset, setTruth, setTweet, cancelToken);
-        return;
-      }
-
       setTruth('network');
       setTweet({
         handle: '@_modelzoo_',
@@ -100,7 +101,18 @@ const loadNetworkTweet = (dataset, setTruth, setTweet, cancelToken) => {
         link: datasetToLink[dataset]
       });
     })
-    .catch(error => {});
+    .catch(error => {
+      // If Model Zoo servers are being overloaded we'll get a 429 or 503
+      // status back. In this case, display to the user.
+      if (
+        error.response &&
+        (error.response.status === 429 || error.response.status === 503)
+      ) {
+        setError('load');
+      } else if (error.request) {
+        setError('unknown');
+      }
+    });
 };
 
 const loadHumanTweet = (dataset, setTruth, setTweet) => {
@@ -212,6 +224,7 @@ const Game = props => {
   let [tweet, setTweet] = useState(null);
   let [truth, setTruth] = useState(null);
   let [guess, setGuess] = useState(null);
+  let [error, setError] = useState(null);
 
   const { dataset, setNumGuesses, setNumRight } = props;
 
@@ -221,7 +234,7 @@ const Game = props => {
 
     if (Math.random() < 0.5) {
       const cancelToken = axios.CancelToken.source();
-      loadNetworkTweet(dataset, setTruth, setTweet, cancelToken);
+      loadNetworkTweet(dataset, setTruth, setTweet, setError, cancelToken);
       return () => {
         cancelToken.cancel();
       };
@@ -231,20 +244,47 @@ const Game = props => {
         clearTimeout(timeout);
       };
     }
-  }, [setTruth, setTweet, dataset]);
+  }, [setTruth, setTweet, setError, dataset]);
 
   const reset = () => {
     setTweet(null);
     setGuess(null);
 
     if (Math.random() < 0.5) {
-      loadNetworkTweet(dataset, setTruth, setTweet);
+      loadNetworkTweet(dataset, setTruth, setTweet, setError);
     } else {
       loadHumanTweet(dataset, setTruth, setTweet);
     }
   };
 
-  if (tweet === null) {
+  if (error !== null) {
+    if (error === 'load') {
+      return (
+        <Box style={{ textAlign: 'center' }}>
+          <ErrorIcon fontSize="large" />
+          <Box my={3} />
+          <Typography variant="body1">
+            Our servers are currently struggling to support the high load :(
+            Please come try again later.
+          </Typography>
+          <Box my={3} />
+          <Typography variant="body2" className="styleLinks">
+            <a href="mailto:contact@modelzoo.dev">Hire us</a> so we can afford
+            more server capacity?
+          </Typography>
+        </Box>
+      );
+    } else {
+      return (
+        <Box style={{ textAlign: 'center' }}>
+          <ErrorIcon fontSize="large" />
+          <Typography variant="body1">
+            Something went wrong :( Please come try again later.
+          </Typography>
+        </Box>
+      );
+    }
+  } else if (tweet === null) {
     return (
       <Box my={2} style={{ textAlign: 'center' }}>
         <CircularProgress />
