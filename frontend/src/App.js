@@ -454,8 +454,11 @@ const App = () => {
           />
         </Box>
         <Box my={5} />
-        <Typography variant="h4" display="inline">
+        <Typography variant="h4">
           <strong>Twitter Turing Test</strong>
+        </Typography>
+        <Typography variant="h5" className="styleLinks">
+          by <a href="https://modelzoo.dev">Model Zoo</a>
         </Typography>
         <Box my={2} />
         <Select
