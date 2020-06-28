@@ -79,7 +79,7 @@ const loadNetworkTweet = (
   axios
     .post(
       datasetToEndpoint[dataset],
-      { min_length: 1 },
+      { min_length: 3 },
       {
         headers: {
           // The Model Zoo Public Demo API Key. This key can only be used to
