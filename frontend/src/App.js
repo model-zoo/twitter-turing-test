@@ -486,9 +486,12 @@ const App = () => {
           }}
           display="inline">
           <MenuItem value="vc">Venture Capital</MenuItem>
-          <MenuItem value="democrats">Democrat</MenuItem>
-          <MenuItem value="republicans">Republican</MenuItem>
-          <MenuItem value="covid19">COVID-19</MenuItem>
+          {
+            // Disable some of the additional models to save costs.
+            // <MenuItem value="democrats">Democrat</MenuItem>
+            // <MenuItem value="republicans">Republican</MenuItem>
+            // <MenuItem value="covid19">COVID-19</MenuItem>
+          }
         </Select>{' '}
         <Typography variant="h5" color="primary" display="inline">
           Edition
