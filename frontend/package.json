@@ -13,7 +13,7 @@
     "moment": "^2.26.0",
     "react": "^16.13.1",
     "react-dom": "^16.13.1",
-    "react-scripts": "3.4.1",
+    "react-scripts": "5.0.1",
     "react-twitter-widgets": "^1.9.5"
   },
   "scripts": {
